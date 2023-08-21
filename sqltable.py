@@ -43,5 +43,21 @@ def change_player_score(name, score):
         # создаем объект Person для добавления в бд
         player = db.query(Player).filter(Player.name == name).first()
         if player:
-            player.score = score
+            player.score += score
             db.commit()
+        else:
+            add_player(name, score)
+
+
+def all_players():
+    # создаем сессию подключения к бд
+    with Session(autoflush=False, bind=engine) as db:
+        # создаем объект Person для добавления в бд
+        players = db.query(Player).all()
+    dict_players = {}
+    for player in players:
+        dict_players[player.name] = player.score
+    return dict_players
+
+
+
