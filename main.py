@@ -16,9 +16,8 @@ def start_message(message):
     scores = []
     for player in top_players.keys():
         scores.append(f"{player}: {top_players[player]} очков")
-    # отправляем картинку с результатами
-    bot.send_photo(message.chat.id, open('images/top.png', 'rb'))
-    bot.send_message(message.chat.id, "\n".join(scores))
+    # отправляем gif анимацию и сообщение
+    bot.send_animation(message.chat.id, open('images/top.gif', 'rb'), caption="\n".join(scores))
 
 
 @bot.message_handler(content_types=['text'])
