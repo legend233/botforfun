@@ -6,6 +6,9 @@ RUN ["mkdir", "/app"]
 RUN ["mkdir", "/app/db"]
 ENV TELEGRAMM_TOKEN="telegramm_token"
 ENV DB_PATH="db/sql.db"
+RUN apk add --no-cache tzdata
+ENV TZ Asia/Yekaterinburg
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 WORKDIR /app
 COPY ./main.py .
 COPY ./images ./images
