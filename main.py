@@ -8,6 +8,7 @@ from sqltable import *
 load_dotenv(find_dotenv())
 bot = telebot.TeleBot(os.getenv('TELEGRAMM_TOKEN'))
 
+temp_moments = dict()
 
 @bot.message_handler(commands=['top'])
 def start_message(message):
@@ -26,13 +27,16 @@ def get_time_message(message):
     time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M')
     if valid_time(message.text):
         if time_current_mesage == message.text.strip():
-            score = parse_time(message.text)
-            if score:
-                change_player_score(message.from_user.username, score)
-                gif = open('images/congratulations{score}.gif', 'rb')
-                mess = f"Поздравляю, {message.from_user.first_name}! Получи {score} очков!\nТеперь у вас {get_player_score(message.from_user.username)} очков"
-                bot.send_animation(message.chat.id, gif, caption=mess)
-                
+            if temp_moments.get(message.from_user.username) != time_current_mesage:
+                temp_moments[message.from_user.username] = time_current_mesage
+                score = parse_time(message.text)
+                if score:
+                    change_player_score(message.from_user.username, score)
+                    gif = open('images/congratulations{score}.gif', 'rb')
+                    mess = f"Поздравляю, {message.from_user.first_name}! Получи {score} очков!\nТеперь у вас {get_player_score(message.from_user.username)} очков"
+                    bot.send_animation(message.chat.id, gif, caption=mess)
+            else:
+                bot.send_message(message.chat.id, "Ха-Ха! Повторно получить очки не получится!)")
         else:
             bot.send_animation(message.chat.id, open('images/no.gif', 'rb'), caption="Не вышло...")
 
