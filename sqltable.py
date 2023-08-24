@@ -3,8 +3,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import  Column, Integer, String
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv, find_dotenv
+import os
 
-engine = create_engine("sqlite:///sql.db")
+load_dotenv(find_dotenv())
+engine = create_engine("sqlite:///" + os.getenv('DB_PATH'))
 
 
 class Base(DeclarativeBase): pass
@@ -60,4 +63,5 @@ def all_players():
     return dict_players
 
 
-
+if not os.path.exists(os.getenv('DB_PATH')):
+    create_tables()

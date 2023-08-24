@@ -29,10 +29,12 @@ def get_time_message(message):
             score = parse_time(message.text)
             if score:
                 change_player_score(message.from_user.username, score)
-                bot.send_message(message.chat.id,
-                                 f"Поздравляю, {message.from_user.first_name}! Получи {score} очков!\nТеперь у вас {get_player_score(message.from_user.username)} очков")
+                gif = open('images/congratulations{score}.gif', 'rb')
+                mess = f"Поздравляю, {message.from_user.first_name}! Получи {score} очков!\nТеперь у вас {get_player_score(message.from_user.username)} очков"
+                bot.send_animation(message.chat.id, gif, caption=mess)
+                
         else:
-            bot.send_message(message.chat.id, "Не успел?))))")
+            bot.send_animation(message.chat.id, open('images/no.gif', 'rb'), caption="Не вышло...")
 
 
 bot.polling(none_stop=True)
