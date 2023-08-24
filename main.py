@@ -10,9 +10,15 @@ bot = telebot.TeleBot(os.getenv('TELEGRAMM_TOKEN'))
 
 temp_moments = dict()
 
-@bot.message_handler(commands=['top'])
+@bot.message_handler(commands=['test'])
 def start_message(message):
     """Функция для теста работоспособности бота"""
+    time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M')
+    bot.send_message(message.chat.id, "Сейчас время: "+time_current_mesage)
+
+
+@bot.message_handler(commands=['top'])
+def start_message(message):
     top_players = all_players()
     scores = []
     for player in top_players.keys():
