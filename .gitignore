@@ -2,4 +2,4 @@
 .env
 .idea
 *.db
-__pycashe__
+__pycache__
