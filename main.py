@@ -40,7 +40,7 @@ def get_time_message(message):
                 if score:
                     change_player_score(message.from_user.username, score)
                     gif = open(f'images/congratulations{score}.gif', 'rb')
-                    mess = f"Поздравляю, {message.from_user.first_name}! Получи {score} очков!\nТеперь у вас {get_player_score(message.from_user.username)} очков"
+                    mess = f"Поздравляю, {message.from_user.first_name}! Получи {score} 💰!\nТеперь у вас {get_player_score(message.from_user.username)} 💰💰💰"
                     bot.send_animation(message.chat.id, gif, caption=mess)
             else:
                 bot.send_message(message.chat.id, "Ха-Ха! Повторно получить очки не получится!)")
