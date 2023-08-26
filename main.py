@@ -19,10 +19,11 @@ def start_message(message):
 
 @bot.message_handler(commands=['top'])
 def start_message(message):
-    top_players = all_players()
+    top_players = all_players().items()
+    sort_top_players = sorted(top_players, key=lambda x: int(x[1]), reverse=True)
     scores = []
-    for player in top_players.keys():
-        scores.append(f"{player}: {top_players[player]} очков")
+    for player, score in sort_top_players:
+        scores.append(f"{player}: {score} 💰")
     # отправляем gif анимацию и сообщение
     bot.send_animation(message.chat.id, open('images/top.gif', 'rb'), caption="\n".join(scores))
 
@@ -38,7 +39,7 @@ def get_time_message(message):
                 score = parse_time(message.text)
                 if score:
                     change_player_score(message.from_user.username, score)
-                    gif = open('images/congratulations{score}.gif', 'rb')
+                    gif = open(f'images/congratulations{score}.gif', 'rb')
                     mess = f"Поздравляю, {message.from_user.first_name}! Получи {score} очков!\nТеперь у вас {get_player_score(message.from_user.username)} очков"
                     bot.send_animation(message.chat.id, gif, caption=mess)
             else:
