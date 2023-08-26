@@ -1,0 +1,11 @@
+version: '2.2'
+services:
+  botforfun:
+    image: yuchoba/botforfun:latest
+    container_name: botforfun
+    restart: unless-stopped
+    volumes:
+      - YOUR DB DIR:/app/db
+    environment:
+      - TELEGRAMM_TOKEN=YOUR TOKEN
+      - TZ=YOUR TIMEZONE
