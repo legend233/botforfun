@@ -34,9 +34,9 @@ def get_time_message(message):
     time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M')
     if valid_time(message.text):
         if time_current_mesage == message.text.strip():
-            if temp_moments.get(message.from_user.username) != time_current_mesage:
+            score = parse_time(message.text)
+            if temp_moments.get(message.from_user.username) != time_current_mesage and score:
                 temp_moments[message.from_user.username] = time_current_mesage
-                score = parse_time(message.text)
                 if score:
                     change_player_score(message.from_user.username, score)
                     gif = open(f'images/congratulations{score}.gif', 'rb')

@@ -2,4 +2,5 @@
 .env
 .idea
 .vscode
-__pycache__
+*.db
+__pycashe__
