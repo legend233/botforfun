@@ -23,7 +23,7 @@ def parse_time(sample_text: str) -> int:
         result = 2
     elif clear_text[0] == clear_text[1][::-1]:
         result = 1
-    elif text.replace(":", "") in ("01234", "1234", "2345"):
+    elif text.replace(":", "") in ("0123", "1234", "2345"):
         result = 4
     else:
         result = 0
