@@ -13,15 +13,15 @@ emoji = ["💰", "💶", "🏆", "💎","👑"]
 
 def tier(score):
     if score < 50:
-        return emoji[0]
+        return 0
     elif score < 75:
-        return emoji[1]
+        return 1
     elif score < 100:
-        return emoji[2]
+        return 2
     elif score < 125:
-        return emoji[3]
+        return 3
     else:
-        return emoji[4]
+        return 4
 
 
 @bot.message_handler(commands=['test'])
@@ -47,6 +47,7 @@ def get_time_message(message):
     """Обработка сообщений от пользователя на предмет игры в 'время'"""
     time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M')
     if valid_time(message.text):
+        scores = get_player_score(message.from_user.username)
         if time_current_mesage == message.text.strip():
             if temp_moments.get(message.from_user.username) != time_current_mesage:
                 score = parse_time(message.text)
