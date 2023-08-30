@@ -63,5 +63,8 @@ def get_time_message(message):
         else:
             bot.send_animation(message.chat.id, open(f'images/tier{tier(scores)}/no.gif', 'rb'), caption="Не вышло...")
 
+    elif any([x in message.text.lower() for x in ["бля", "сука", "пизд", "пздц", "хуй", "чмо", "пизда", "пидор", "фак", "fuck", "долбоеб", "долбаеб"]]):
+        mess = f"Попрошу Вас не выражаться, {message.from_user.first_name}..."
+        bot.send_animation(message.chat.id, open('images/consored.gif', 'rb'), caption=mess, reply_to_message_id=message.message_id)
 
 bot.polling(none_stop=True)
