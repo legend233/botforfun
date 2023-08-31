@@ -37,6 +37,8 @@ def start_message(message):
     sort_top_players = sorted(top_players, key=lambda x: int(x[1]), reverse=True)
     scores = []
     for player, score in sort_top_players:
+        if player == "TestVtechnologyBOT":
+            player = "Колпаков И.Ю."
         scores.append(f"{player}: {score} {emoji[tier(score)]}")
     # отправляем gif анимацию и сообщение
     bot.send_animation(message.chat.id, open('images/top.gif', 'rb'), caption="\n".join(scores))
