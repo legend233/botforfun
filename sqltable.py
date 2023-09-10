@@ -55,6 +55,14 @@ def get_game(id):
         if game:
             return game.game_name, game.online_status
 
+def get_id_chats(game_name):
+    # создаем сессию подключения к бд
+    with Session(autoflush=False, bind=engine) as db:
+        game = db.query(Games).filter(Games.game_name == game_name, Games.online_status == True).all()
+        if game:
+            result = [x.chat_id for x in game]
+            print(result)
+            return result
 
 def change_player_score(id, name, score):
     # создаем сессию подключения к бд
@@ -113,7 +121,8 @@ def all_games_online():
     with Session(autoflush=False, bind=engine) as db:
         # создаем объект Game для добавления в бд
         games = db.query(Games.game_name).filter(Games.online_status == True).all()
-    return list(set([x[0] for x in games]))
+    result = list(set([x[0] for x in games]))
+    return result
 
 def add_game(id, name):
     # создаем сессию подключения к бд
