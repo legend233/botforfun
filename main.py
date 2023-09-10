@@ -9,7 +9,7 @@ load_dotenv(find_dotenv())
 bot = telebot.TeleBot(os.getenv('TELEGRAMM_TOKEN'))
 
 temp_moments = dict()
-emoji = ["💰", "💶", "🏆", "💎","👑"]
+emoji = ["🪙", "💵", "💰", "💎","👑"]
 
 def tier(score):
     if score < 25:
@@ -20,8 +20,10 @@ def tier(score):
         return 2
     elif score < 100:
         return 3
-    else:
+    elif score < 125
         return 4
+    else:
+        return 5
 
 
 @bot.message_handler(commands=['time'])
@@ -30,8 +32,8 @@ def cur_time(message):
     time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M')
     bot.send_message(message.chat.id, "Сейчас время: "+time_current_mesage, parse_mode="Markdown")
 
-@bot.message_handler(commands=['help'])
-def help_message(message):
+@bot.message_handler(commands=['start'])
+def start_message(message):
     mess = """Правила
 Игроки должны написать в сообщении красивое время в это самое время. За попадание в то самое время начисляются очки.
 Примеры сообщений:
@@ -40,12 +42,15 @@ def help_message(message):
 11:11 - 3 очка - (забор)
 12:34 - 4 очка - (флеш рояль)
 
+Игра продолжается до 125 очков. Кто первый достигнет финиша, выйгрывает игру, после чего она заканчивается. Все очки игроков ведуться в рабках одной игры и параллельно ведеться общая статистика.
+Есть градации уровней игры. Уровень сменяется, когда игрок набирает 25, 50, 75, 100, 125 очков.
 Список команд:
-/startgame - начать игру
-/endgame - завершить игру
+/startgame "имя игры" - начать игру
+/endgame "имя игры"  - завершить игру.
+(Необходимо более трех игроков или половина игроков в игре, которые хотят выйти)
 /top - показать топ игроков текущей игры
 /total - показать общую статистику игрокам
-/help - помощь"""
+/start - помощь"""
 
     bot.send_message(message.chat.id, mess, parse_mode="Markdown")
 
@@ -69,12 +74,13 @@ def start_game(message):
     if len(command_args) == 2:
         game_name = command_args[1]
         if game_name not in all_games():
-            cur_game = get_game_name(message.chat.id)
-            if cur_game is None:
+            cur_game = get_game(message.chat.id)
+            if not cur_game:
                 add_game(message.chat.id, game_name)
+                change_player_score(message.chat.id, message.from_user.username, score=0)
                 bot.reply_to(message, f"Ваша игра: {game_name}, началась!", parse_mode="Markdown")
             else:
-                bot.reply_to(message, f"Мы уже тут играем! Ваша игра: {cur_game}", parse_mode="Markdown")
+                bot.reply_to(message, f"Мы уже тут играем! Ваша игра: {cur_game[0]}", parse_mode="Markdown")
         else:
             bot.reply_to(message, "Такое название игры уже существует!", parse_mode="Markdown")
     else:
@@ -82,32 +88,31 @@ def start_game(message):
 
 @bot.message_handler(commands=['endgame'])
 def end_game(message):
-    command_args = message.text.split(' ')
-    if len(command_args) == 2:
-        game_name = command_args[1]
-        if game_name in all_games_online():
-            status_of_players = player_status_change(game_name, name=message.from_user.username)
-            mess = f"Голосование участников игры: {game_name}\n" + "\n".join([f'{player[0]}: {player[1]}' for player in status_of_players])
-            bot.reply_to(message, mess, parse_mode="Markdown")
-            if -(-len(status_of_players)// 2) == len(tuple(filter(lambda x: x[1] == False, status_of_players))) or len(tuple(filter(lambda x: x[1] == False, status_of_players))) > 3:
-                game_status_change(game_name)
-                bot.reply_to(message, f"Игра {game_name} окончена!", parse_mode="Markdown")
-        else:
-            bot.reply_to(message, "В такую игру никто не играет!", parse_mode="Markdown")
+    game_name, game_status = get_game(message.chat.id)
+    if game_status:
+        status_of_players = player_status_change(game_name, name=message.from_user.username)
+        mess = f"Голосование участников игры:\n{game_name}\n" + "\n".join([f'{player[0]}: {(player[1] and "В игре ✅" or "хочет закончить 🛑")}' for player in status_of_players])
+        bot.reply_to(message, mess, parse_mode="Markdown")
+        if -(-len(status_of_players)// 2) == len(tuple(filter(lambda x: x[1] == False, status_of_players))) or len(tuple(filter(lambda x: x[1] == False, status_of_players))) > 3:
+            game_status_change(game_name)
+            bot.reply_to(message, f"Игра {game_name} окончена!", parse_mode="Markdown")
     else:
-        bot.reply_to(message, "Пожалуйста, напишите название игры после команды /endgame", parse_mode="Markdown")
+        bot.reply_to(message, "В такую игру никто не играет!", parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['top'])
 def top_players_message(message):
-    top_players = all_players(message.chat.id).items()
-    sort_top_players = sorted(top_players, key=lambda x: int(x[1]), reverse=True)
-    scores = []
-    for player, score in sort_top_players:
-        scores.append(f"{player}: {score} {emoji[tier(score)]}")
-    # отправляем gif анимацию и сообщение
-    mess = f"Игра: *{get_game_name(message.chat.id)}*\n" + "\n".join(scores)
-    bot.send_animation(message.chat.id, open('images/top.gif', 'rb'), caption=mess, parse_mode="Markdown")
+    if get_game(message.chat.id):
+        top_players = all_players(message.chat.id).items()
+        sort_top_players = sorted(top_players, key=lambda x: int(x[1]), reverse=True)
+        scores = []
+        for player, score in sort_top_players:
+            scores.append(f"{player}: {score} {emoji[tier(score)]}")
+        # отправляем gif анимацию и сообщение
+        mess = f"➡ **{get_game(message.chat.id)[0]}**\n" + "\n".join(scores)
+        bot.send_animation(message.chat.id, open('images/top.gif', 'rb'), caption=mess, parse_mode="Markdown")
+    else:
+        bot.reply_to(message, "Тут никто не играет 😔", parse_mode="Markdown")
 
 @bot.message_handler(commands=['total'])
 def total_players_message(message):

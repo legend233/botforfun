@@ -48,12 +48,12 @@ def get_player_score(id, name):
         else:
             return 0
 
-def get_game_name(id):
+def get_game(id):
     # создаем сессию подключения к бд
     with Session(autoflush=False, bind=engine) as db:
         game = db.query(Games).filter(Games.chat_id == id, Games.online_status == True).first()
         if game:
-            return game.game_name
+            return game.game_name, game.online_status
 
 
 def change_player_score(id, name, score):
@@ -77,7 +77,7 @@ def all_players(chat_id):
     # создаем сессию подключения к бд
     with Session(autoflush=False, bind=engine) as db:
         # создаем объект Player для добавления в бд
-        game_name = db.query(Games).filter(Games.chat_id == chat_id).first()
+        game_name = db.query(Games).filter(Games.chat_id == chat_id, Games.online_status == True).first()
         if game_name:
             game_name = game_name.game_name
             players = db.query(Player).filter(Player.game_name == game_name).all()
