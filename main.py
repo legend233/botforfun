@@ -11,6 +11,8 @@ bot = telebot.TeleBot(os.getenv('TELEGRAMM_TOKEN'))
 temp_moments = dict()
 emoji = ["🪙", "💵", "💰", "💎","👑"]
 congratulations = ["На печеньку 🍪", "Будильник? Признаяся ⏲️", "Ай молодец 😎", "Так можешь только ты и мастер Йода 👽"]
+excluded_markdown = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+
 def tier(score):
     if score < 25:
         return 0
@@ -61,7 +63,7 @@ def connect(message):
         game_name = command_args[1]
         if game_name in all_games_online():
             add_game(message.chat.id, game_name)
-            bot.reply_to(message, f"Вы подключились к игре: *{game_name}*, началась 🚀", parse_mode="Markdown")
+            bot.reply_to(message, f"Вы подключились к игре: *{game_name}* 🚀", parse_mode="Markdown")
         else:
             bot.reply_to(message, "В такую игру никто не играет 🤔")
     else:
@@ -78,6 +80,9 @@ def start_game(message):
     command_args = message.text.split(' ')
     if len(command_args) == 2:
         game_name = command_args[1]
+        for letter in game_name:
+            if letter in excluded_markdown:
+                game_name = game_name.replace(letter, "")
         if game_name not in all_games():
             cur_game = get_game(message.chat.id)
             if not cur_game:
