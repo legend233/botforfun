@@ -113,7 +113,7 @@ def all_games_online():
     with Session(autoflush=False, bind=engine) as db:
         # создаем объект Game для добавления в бд
         games = db.query(Games.game_name).filter(Games.online_status == True).all()
-    return [x[0] for x in games]
+    return list(set([x[0] for x in games]))
 
 def add_game(id, name):
     # создаем сессию подключения к бд
@@ -124,14 +124,15 @@ def add_game(id, name):
         db.commit()     # сохраняем изменения
 
 
-def game_status_change(game_name):
+def game_status_change(id):
     # создаем сессию подключения к бд
     with Session(autoflush=False, bind=engine) as db:
         # создаем объект Game для изменения в бд
-        games = db.query(Games).filter(Games.game_name == game_name).all()
+        game_name = db.query(Games).filter(Games.chat_id == id, Games.online_status == True).first()
+        games = db.query(Games).filter(Games.game_name == game_name.game_name).all()
         for game in games:
             game.online_status = False
-        players = db.query(Player).filter(Player.game_name == game_name).all()
+        players = db.query(Player).filter(Player.game_name == game_name.game_name).all()
         for player in players:
             player.play_status = False
         db.commit()     # сохраняем изменения
