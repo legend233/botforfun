@@ -61,7 +61,6 @@ def get_id_chats(game_name):
         game = db.query(Games).filter(Games.game_name == game_name, Games.online_status == True).all()
         if game:
             result = [x.chat_id for x in game]
-            print(result)
             return result
 
 def change_player_score(id, name, score):

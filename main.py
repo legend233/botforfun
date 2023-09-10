@@ -96,11 +96,16 @@ def end_game(message):
     game_name, game_status = get_game(message.chat.id)
     if game_status:
         status_of_players = player_status_change(game_name, name=message.from_user.username)
-        mess = f"Голосование участников игры:\n{game_name}\n" + "\n".join([f'{player[0]}: {(player[1] and "В игре ✅" or "хочет закончить 🛑")}' for player in status_of_players])
+        mess = f"Ты проголосовал закончить игру: {game_name} 🛑"
         bot.reply_to(message, mess, parse_mode="Markdown")
         if -(-len(status_of_players)// 2) == len(tuple(filter(lambda x: x[1] == False, status_of_players))) or len(tuple(filter(lambda x: x[1] == False, status_of_players))) > 3:
+            gif = open(f'images/stopgame.gif', 'rb')
+            mess = f"Голосование участников:*{game_name}*\n\n" + "\n".join([f'{player[0]}: {(player[1] and "В игре ✅" or "хочет закончить 🛑")}' for player in status_of_players])
+            mess_end = f"КОНЕЦ ИГРЫ 👉{game_name}👈\n\n{mess}"
+            list_chats = get_id_chats(game_name)
+            for chat_id in list_chats:
+                bot.send_message(chat_id, mess_end, parse_mode="Markdown")
             game_status_change(message.chat.id)
-            bot.reply_to(message, f"Игра {game_name} окончена 😢", parse_mode="Markdown")
     else:
         bot.reply_to(message, "🫠 Тут никто не играет. Можете начать новую игру 🚀 или подключиться к одной из актвных игр 🖥️", parse_mode="Markdown")
 
