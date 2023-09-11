@@ -149,7 +149,7 @@ def get_time_message(message):
         time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M')
         if valid_time(message.text):
             scores = get_player_score(message.chat.id, message.from_user.username)
-            if time_current_mesage == message.text.strip() or DEV_MODE:
+            if time_current_mesage == message.text.strip():
                 if temp_moments.get(message.from_user.username) != time_current_mesage:
                     score = parse_time(message.text)
                     if score:
