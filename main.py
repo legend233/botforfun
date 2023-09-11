@@ -7,6 +7,7 @@ from sqltable import *
 
 load_dotenv(find_dotenv())
 bot = telebot.TeleBot(os.getenv('TELEGRAMM_TOKEN'))
+DEV_MODE = os.getenv('DEV_MODE')
 
 temp_moments = dict()
 emoji = ["🪙", "💵", "💰", "💎","👑"]
