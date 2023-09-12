@@ -7,10 +7,13 @@ from sqltable import *
 
 load_dotenv(find_dotenv())
 bot = telebot.TeleBot(os.getenv('TELEGRAMM_TOKEN'))
+DEV_MODE = os.getenv('DEV_MODE')
 
 temp_moments = dict()
 emoji = ["🪙", "💵", "💰", "💎","👑"]
-congratulations = ["На печеньку 🍪", "Будильник? Признаяся ⏲️", "Ай молодец 😎", "Так можешь только ты и мастер Йода 👽"]
+congratulations = ["Успел 😉", "Так держать🤪", "Ай молодец 😎", "Так могут не только лишь все 🥊"]
+excluded_markdown = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+
 def tier(score):
     if score < 25:
         return 0
@@ -32,7 +35,8 @@ def cur_time(message):
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    mess = """Правила
+    mess = """Игра INtime
+Правила
 Игроки должны написать в сообщении красивое время в это самое время. За попадание в то самое время начисляются очки.
 Примеры сообщений:
 10:01 - 1 очко - (зеркало)
@@ -61,7 +65,7 @@ def connect(message):
         game_name = command_args[1]
         if game_name in all_games_online():
             add_game(message.chat.id, game_name)
-            bot.reply_to(message, f"Вы подключились к игре: *{game_name}*, началась 🚀", parse_mode="Markdown")
+            bot.reply_to(message, f"Вы подключились к игре: *{game_name}* 🚀", parse_mode="Markdown")
         else:
             bot.reply_to(message, "В такую игру никто не играет 🤔")
     else:
@@ -78,6 +82,9 @@ def start_game(message):
     command_args = message.text.split(' ')
     if len(command_args) == 2:
         game_name = command_args[1]
+        for letter in game_name:
+            if letter in excluded_markdown:
+                game_name = game_name.replace(letter, "")
         if game_name not in all_games():
             cur_game = get_game(message.chat.id)
             if not cur_game:
@@ -143,7 +150,7 @@ def get_time_message(message):
         time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M')
         if valid_time(message.text):
             scores = get_player_score(message.chat.id, message.from_user.username)
-            if time_current_mesage == message.text.strip() or DEV_MODE:
+            if time_current_mesage == message.text.strip():
                 if temp_moments.get(message.from_user.username) != time_current_mesage:
                     score = parse_time(message.text)
                     if score:
