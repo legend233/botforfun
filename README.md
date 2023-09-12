@@ -6,7 +6,7 @@
 Игроки должны написать в сообщении красивое время в это самое время. За попадание в то самое время начисляются очки.
 Примеры сообщений:
 
-<img width="100" alt="2" src="https://github.com/legend233/botforfun/assets/38989679/6201b401-04e9-45b8-9260-70928773654f"> - **1 очко** (зеркало)
+<img width="100" alt="1" src="https://github.com/legend233/botforfun/assets/38989679/1a4db11d-e8c3-4bb9-9c61-69df9663d81e"> - **1 очко** (зеркало)
 
 <img width="100" alt="2" src="https://github.com/legend233/botforfun/assets/38989679/6201b401-04e9-45b8-9260-70928773654f"> - **2 очка** (двойняшки)
 
