@@ -3,7 +3,9 @@ from dotenv import load_dotenv, find_dotenv
 import os
 from parsers import valid_time, parse_time, tier
 import datetime
-from sqltable import get_player_score, get_game, game_status_change, game_status_check, change_player_score, get_id_chats, all_players, all_games, add_game, player_status_change, total_players
+from sqltable import get_player_score, get_game, game_status_change, game_status_check,\
+                     change_player_score, get_id_chats, all_players, all_games, add_game,\
+                     player_status_change, total_players
 
 load_dotenv(find_dotenv())
 bot = telebot.TeleBot(os.getenv('TELEGRAMM_TOKEN'))
@@ -49,6 +51,7 @@ def start_message(message):
 
 @bot.message_handler(commands=['connect'])
 def connect(message):
+    """Подключаем новый чат к игре. После команды должно быть имя"""
     command_args = message.text.split(' ')
     if len(command_args) == 2:
         game_name = command_args[1]
@@ -62,12 +65,14 @@ def connect(message):
 
 @bot.message_handler(commands=['games'])
 def games(message):
+    """Функция для вывода списка активных игр"""
     mess = "Все активные игры:\n" + "🎮 "+('\n🎮 '.join(all_games_online()) or "нет активных игр")
     bot.reply_to(message, mess, parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['startgame'])
 def start_game(message):
+    """Функция для начала игры. После команды должно быть название игры, после чего из названия удаляются все символы мешающие MARKDOWNv2"""
     command_args = message.text.split(' ')
     if len(command_args) == 2:
         game_name = command_args[1]
@@ -89,6 +94,7 @@ def start_game(message):
 
 @bot.message_handler(commands=['endgame'])
 def end_game(message):
+    """Функция для завершения игры. Голосуем за завершение. Если трое проголосовали или половина, округленная в нижнюю сторону, то заканчиваем игру"""
     game_name, game_status = get_game(message.chat.id)
     if game_status:
         status_of_players = player_status_change(game_name, name=message.from_user.username)
