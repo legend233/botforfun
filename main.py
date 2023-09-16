@@ -1,30 +1,19 @@
 import telebot
 from dotenv import load_dotenv, find_dotenv
 import os
-from parsers import *
+from parsers import valid_time, parse_time, tier
 import datetime
-from sqltable import *
+from sqltable import get_player_score, get_game, game_status_change, game_status_check, change_player_score, get_id_chats, all_players, all_games, add_game, player_status_change, total_players
 
 load_dotenv(find_dotenv())
 bot = telebot.TeleBot(os.getenv('TELEGRAMM_TOKEN'))
-DEV_MODE = os.getenv('DEV_MODE')
-
+DEV_MODE = bool(os.getenv('DEV_MODE'))
 temp_moments = dict()
 emoji = ["🪙", "💵", "💰", "💎","👑"]
 congratulations = ["Успел 😉", "Так держать🤪", "Ай молодец 😎", "Так могут не только лишь все 🥊"]
 excluded_markdown = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+censures = ["бля", "блия", "биля", "сука", "пизд", "пздц", "хуй", "ахуе", "чмо", "пизда", "пидор", "фак", "fuck", "долбоеб", "долбаеб", "залуп", "ебал"]
 
-def tier(score):
-    if score < 25:
-        return 0
-    elif score < 50:
-        return 1
-    elif score < 75:
-        return 2
-    elif score < 100:
-        return 3
-    else:
-        return 4
 
 
 @bot.message_handler(commands=['time'])
@@ -150,7 +139,7 @@ def get_time_message(message):
         time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M')
         if valid_time(message.text):
             scores = get_player_score(message.chat.id, message.from_user.username)
-            if time_current_mesage == message.text.strip():
+            if time_current_mesage == message.text.strip() or DEV_MODE:
                 if temp_moments.get(message.from_user.username) != time_current_mesage:
                     score = parse_time(message.text)
                     if score:
@@ -191,8 +180,10 @@ def get_time_message(message):
             else:
                 bot.send_animation(message.chat.id, open(f'images/tier{tier(scores)}/no.gif', 'rb'), caption="Не вышло...")
 
-        elif any([x in message.text.lower() for x in ["бля", "блия", "биля", "сука", "пизд", "пздц", "хуй", "ахуе", "чмо", "пизда", "пидор", "фак", "fuck", "долбоеб", "долбаеб", "залуп", "ебал"]]):
+        elif any([x in message.text.lower() for x in censures]):
             mess = f"Попрошу Вас не выражаться, {message.from_user.first_name}..."
             bot.send_animation(message.chat.id, open('images/consored.gif', 'rb'), caption=mess, reply_to_message_id=message.message_id)
 
-bot.polling(none_stop=True)
+
+if __name__ == "__main__":
+    bot.polling(none_stop=True)

@@ -28,3 +28,15 @@ def parse_time(sample_text: str) -> int:
     else:
         result = 0
     return result
+
+def tier(score):
+    if score < 25:
+        return 0
+    elif score < 50:
+        return 1
+    elif score < 75:
+        return 2
+    elif score < 100:
+        return 3
+    else:
+        return 4
