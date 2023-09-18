@@ -6,25 +6,27 @@ from parsers import valid_time, parse_time, tier
 import datetime
 from sqltable import get_player_score, get_game, game_status_change, game_status_check, \
     change_player_score, get_id_chats, all_players, all_games, add_game, \
-    player_status_change, total_players, all_games_online
+    player_status_change, total_players, all_games_online, change_cheater_count, \
+    get_cheater_count, get_cheater_count_all
 
 load_dotenv(find_dotenv())
 bot = telebot.TeleBot(os.getenv('TELEGRAMM_TOKEN'))
-DEV_MODE = bool(os.getenv('DEV_MODE'))
+DEV_MODE =(True if os.getenv('DEV_MODE') == "True" else False) # ToDo: need dev_mode
 temp_moments = dict()
-cheater_score = dict()
 emoji = ["🪙", "💵", "💰", "💎", "👑"]
 congratulations = ["Успел 😉", "Так держать🤪", "Ай молодец 😎", "Так могут не только лишь все 🥊"]
 excluded_markdown = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
 censures = ["бля", "блия", "биля", "сука", "пизд", "пздц", "хуй", "ахуе", "чмо", "пизда", "пидор",
             "фак", "fuck", "долбоеб", "долбаеб", "залуп", "ебал"]
 
+
 def is_delayed_message(date):
-        message_time = datetime.datetime.fromtimestamp(date).strftime("%S")
-        if int(message_time) < 3:
-            return True
-        else:
-            return False
+    """Функция для определения, что сообщение является подозрением отложенное (жульничество)"""
+    message_time = datetime.datetime.fromtimestamp(date).strftime("%S")
+    if int(message_time) < 3:
+        return True
+    else:
+        return False
 
 
 @bot.message_handler(commands=['time'])
@@ -60,6 +62,7 @@ def start_message(message):
 /connect "имя игры" - подключиться к игре
 /top - показать топ игроков текущей игры
 /total - показать общую статистику игрокам
+/cheaters - показать количество очков жульничества
 /start - помощь"""
 
     bot.send_message(message.chat.id, mess, parse_mode="Markdown")
@@ -85,6 +88,16 @@ def games(message):
     """Функция для вывода списка активных игр"""
     mess = "Все активные игры:\n" + "🎮 "+('\n🎮 '.join(all_games_online()) or "нет активных игр")
     bot.reply_to(message, mess, parse_mode="Markdown")
+
+
+@bot.message_handler(commands=['cheaters'])
+def cheaters(message):
+    """Функция для вывода очков жульничества всех игроков"""
+    cheaters = sorted(get_cheater_count_all().items(), reverse=True, key=lambda x: int(x[1]))
+    cheaters_mess = '\n'.join(f"{name}: {count} 💩" for name, count in cheaters)
+    mess = "Самые хитрые игроки: \n\n" + cheaters_mess
+    gif = open('images/cheaters.gif', 'rb')
+    bot.send_animation(message.chat.id, gif, caption=mess, parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['startgame'])
@@ -169,13 +182,10 @@ def get_time_message(message):
         time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M')
         if valid_time(message.text):
             scores = get_player_score(message.chat.id, message.from_user.username)
-            if time_current_mesage == message.text.strip():  # ToDo: need dev_mode
+            if time_current_mesage == message.text.strip() or DEV_MODE:
                 if is_delayed_message(date=message.date):
-                    if cheater_score.get(message.from_user.username) is None:
-                        cheater_score[message.from_user.username] = 1
-                    else:
-                        cheater_score[message.from_user.username] += 1
-                    mess = f"Ты подозреваешься в жульничестве🫢.(Уже {cheater_score[message.from_user.username]} раз подряд). Попробуй еще раз."
+                    cheater_score = change_cheater_count(name=message.from_user.username)
+                    mess = f"{message.from_user.first_name}, ты подозреваешься в жульничестве🫢.(Уже {cheater_score} раз подряд). Попробуй еще раз."
                     gif = open('images/cheater.gif', 'rb')
                     bot.send_animation(message.chat.id, gif, caption=mess, parse_mode="Markdown")
                 else:
@@ -186,8 +196,8 @@ def get_time_message(message):
                             change_player_score(message.chat.id, message.from_user.username, score)
                             scores = get_player_score(message.chat.id, message.from_user.username)
                             gif = open(f'images/tier{tier(scores)}/{score}.gif', 'rb')
-                            mess = f"*{message.from_user.first_name}*, {congratulations[score-1]}\n\n\
-                            Держи {emoji[tier(scores)]*score}\n\nТвой счет: *{scores}* {emoji[tier(scores)]}"
+                            mess = f"*{message.from_user.first_name}*, {congratulations[score-1]}\n\n" + \
+                                f"Держи {emoji[tier(scores)]*score}\n\nТвой счет: *{scores}* {emoji[tier(scores)]}"
                             bot.send_animation(message.chat.id, gif, caption=mess, parse_mode="MarkdownV2")
                             if scores >= 125:
                                 gif_winner = open(f'images/winner.gif', 'rb')
