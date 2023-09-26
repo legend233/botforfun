@@ -4,6 +4,7 @@ from dotenv import load_dotenv, find_dotenv
 import os
 from parsers import valid_time, parse_time, tier
 import datetime
+from time import sleep
 from sqltable import get_player_score, get_game, game_status_change, game_status_check, \
     change_player_score, get_id_chats, all_players, all_games, add_game, \
     player_status_change, total_players, all_games_online, change_cheater_count, \
@@ -218,15 +219,17 @@ def get_time_message(message):
                                 
                                 bot.send_animation(message.chat.id, gif_winner, caption=final_text(mess_win),
                                                 parse_mode="Markdown")
-                                mess_loser = f"КОНЕЦ ИГРЫ. *{message.from_user.first_name}* \
-                                победил со счетом *{scores}* {emoji[tier(scores)]}\n\n"
+                                mess_loser = f"КОНЕЦ ИГРЫ. *{message.from_user.first_name}* " + \
+                                    f"победил со счетом *{scores}* {emoji[tier(scores)]}\n\n"
 
                                 list_chats = get_id_chats(get_game(message.chat.id)[0])
                                 list_chats.remove(str(message.chat.id))
                                 for chat_id in list_chats:
+                                    sleep(0.3)
                                     text = final_text(mess_loser)
+                                    gif_loser.seek(0)
                                     bot.send_animation(chat_id, gif_loser, caption=text, parse_mode="Markdown")
-
+                                    
                                 game_status_change(message.chat.id)
                     else:
                         mess = "Ха-Ха! Повторно получить очки не получится! 😀"
@@ -242,4 +245,4 @@ def get_time_message(message):
 
 
 if __name__ == "__main__":
-    bot.polling(none_stop=True)
+    bot.infinity_polling(skip_pending=True, none_stop=True)
