@@ -34,12 +34,8 @@ def is_delayed_message(date):
 
 @bot.message_handler(commands=['time'])
 def cur_time(message):
-    if is_delayed_message(message):
-        bot.reply_to(message, f"Есть подозрение, что ты {message.from_user.first_name}, читеришь. Попробуй еще раз.", parse_mode="Markdown")
-    else:
-    #"""Функция для теста текущего времени бота"""
-        time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M:%S')
-        bot.send_message(message.chat.id, "Сейчас время: "+time_current_mesage, parse_mode="Markdown")
+    time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M:%S')
+    bot.send_message(message.chat.id, "Сейчас время: "+time_current_mesage, parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['start'])
