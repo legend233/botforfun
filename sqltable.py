@@ -29,8 +29,6 @@ class Games(Base):
     game_name = Column(String)
     online_status = Column(Boolean, default=True)
 
-
-
 def create_tables():
     # создаем таблицы
     Base.metadata.create_all(bind=engine)
@@ -153,10 +151,11 @@ def game_status_check(id):
         game = db.query(Games).filter(Games.chat_id == id, Games.online_status == True).first()
         return game
 
+
 def total_players():
     # создаем сессию подключения к бд
     with Session(autoflush=False, bind=engine) as db:
-        # создаем объект Game для изменения в бд
+        # создаем объект Player для изменения в бд
         players = db.query(Player).all()
         scores = dict()
         for player in players:
@@ -166,5 +165,4 @@ def total_players():
                 scores[player.name] = player.score
     return scores
 
-if not os.path.exists(os.getenv('DB_PATH')):
-    create_tables()
+create_tables()

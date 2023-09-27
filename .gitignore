@@ -4,3 +4,7 @@
 .vscode
 *.db
 __pycashe__
+__pycache__/main.cpython-311.pyc
+__pycache__/parsers.cpython-311.pyc
+__pycache__/sqltable.cpython-311.pyc
+__pycache__/test_parsers.cpython-311.pyc
