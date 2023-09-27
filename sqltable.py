@@ -29,12 +29,6 @@ class Games(Base):
     game_name = Column(String)
     online_status = Column(Boolean, default=True)
 
-class Cheater(Base):
-    __tablename__ = "cheaters"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    cheat_count = Column(Integer)
-
 def create_tables():
     # создаем таблицы
     Base.metadata.create_all(bind=engine)
@@ -170,38 +164,5 @@ def total_players():
             else:
                 scores[player.name] = player.score
     return scores
-
-def change_cheater_count(name):
-    """Изменить количество очков жульничества на +1"""
-    # создаем сессию подключения к бд
-    with Session(autoflush=False, bind=engine) as db:
-        cheater = db.query(Cheater).filter(Cheater.name == name).first()
-        if cheater:
-            cheater.cheat_count += 1
-        else:
-            cheater = Cheater(name=name, cheat_count=1)
-            db.add(cheater)
-        cheater_count = cheater.cheat_count
-        db.commit()     # сохраняем изменения
-    return cheater_count
-
-
-def get_cheater_count(name):
-    """Получить количество очков жульничества"""
-    # создаем сессию подключения к бд
-    with Session(autoflush=False, bind=engine) as db:
-        cheater = db.query(Cheater).filter(Cheater.name == name).first()
-        return cheater.cheat_count if cheater else 0
-
-
-def get_cheater_count_all():
-    """Получить количество очков жульничества всех игроков"""
-    # создаем сессию подключения к бд
-    with Session(autoflush=False, bind=engine) as db:
-        cheaters = db.query(Cheater).all()
-        dict_cheaters = dict()
-        for cheater in cheaters:
-            dict_cheaters[cheater.name] = cheater.cheat_count
-        return dict_cheaters
 
 create_tables()
