@@ -198,8 +198,8 @@ def get_time_message(message):
                             if scores >= 125:
                                 gif_winner = open(f'images/winner.gif', 'rb')
                                 gif_loser = open(f'images/loser.gif', 'rb')
-                                mess_win = f"ВООТ ЭТО ДААА, *{message.from_user.first_name}* 🎉🎉🎉.\n\n\
-                                Вы выиграли игру со счетом *{scores}* {emoji[tier(scores)]}\n\n"
+                                mess_win = f"ВООТ ЭТО ДААА, *{message.from_user.first_name}* 🎉🎉🎉.\n\n" + \
+                                f"Вы выиграли игру со счетом *{scores}* {emoji[tier(scores)]}\n\n"
 
                                 def final_text(original_text):
                                     top_players = all_players(message.chat.id).items()
