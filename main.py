@@ -181,10 +181,10 @@ def get_time_message(message):
                     bot.send_animation(message.chat.id, gif, caption=mess, parse_mode="Markdown", reply_markup=markup)
                     cur_cheater = message.from_user.username
                 else:
-                    if temp_moments.get(message.from_user.username) != time_current_mesage:
+                    if temp_moments.get(message.from_user.username) != message.date:
                         score = parse_time(message.text)
                         if score:
-                            temp_moments[message.from_user.username] = time_current_mesage
+                            temp_moments[message.from_user.username] = message.date
                             change_player_score(message.chat.id, message.from_user.username, score)
                             scores = get_player_score(message.chat.id, message.from_user.username)
                             gif = open(f'images/tier{tier(scores)}/{score}.gif', 'rb')
