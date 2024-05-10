@@ -1,33 +1,46 @@
 # noinspection PyPackageRequirements
 import telebot
+from telebot import types
 from dotenv import load_dotenv, find_dotenv
 import os
 from parsers import valid_time, parse_time, tier
 import datetime
+from time import sleep
+from random import choice
 from sqltable import get_player_score, get_game, game_status_change, game_status_check, \
     change_player_score, get_id_chats, all_players, all_games, add_game, \
     player_status_change, total_players, all_games_online
 
 load_dotenv(find_dotenv())
 bot = telebot.TeleBot(os.getenv('TELEGRAMM_TOKEN'))
-DEV_MODE = bool(os.getenv('DEV_MODE'))
+DEV_MODE =(True if os.getenv('DEV_MODE') == "True" else False) # ToDo: need dev_mode
 temp_moments = dict()
 emoji = ["🪙", "💵", "💰", "💎", "👑"]
 congratulations = ["Успел 😉", "Так держать🤪", "Ай молодец 😎", "Так могут не только лишь все 🥊"]
 excluded_markdown = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
 censures = ["бля", "блия", "биля", "сука", "пизд", "пздц", "хуй", "ахуе", "чмо", "пизда", "пидор",
             "фак", "fuck", "долбоеб", "долбаеб", "залуп", "ебал"]
+cur_cheater = None
+
+
+def is_delayed_message(date):
+    """Функция для определения, что сообщение является подозрением отложенное (жульничество)"""
+    message_time = datetime.datetime.fromtimestamp(date).strftime("%S")
+    if int(message_time) < 3:
+        return True
+    else:
+        return False
 
 
 @bot.message_handler(commands=['time'])
 def cur_time(message):
-    """Функция для теста текущего времени бота"""
-    time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M')
+    time_current_mesage = datetime.datetime.fromtimestamp(message.date).strftime('%H:%M:%S')
     bot.send_message(message.chat.id, "Сейчас время: "+time_current_mesage, parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
+    """Функция для приветствия"""
     mess = """Игра INtime
 Правила
 Игроки должны написать в сообщении красивое время в это самое время. За попадание в то самое время начисляются очки.
@@ -158,52 +171,67 @@ def get_time_message(message):
         if valid_time(message.text):
             scores = get_player_score(message.chat.id, message.from_user.username)
             if time_current_mesage == message.text.strip() or DEV_MODE:
-                if temp_moments.get(message.from_user.username) != message.date:
-                    score = parse_time(message.text)
-                    if score:
-                        temp_moments[message.from_user.username] = message.date
-                        change_player_score(message.chat.id, message.from_user.username, score)
-                        scores = get_player_score(message.chat.id, message.from_user.username)
-                        gif = open(f'images/tier{tier(scores)}/{score}.gif', 'rb')
-                        mess = f"*{message.from_user.first_name}*, {congratulations[score-1]}\n\n\
-                        Держи {emoji[tier(scores)]*score}\n\nТвой счет: *{scores}* {emoji[tier(scores)]}"
-
-                        bot.send_animation(message.chat.id, gif, caption=mess, parse_mode="MarkdownV2")
-                        if scores >= 125:
-                            gif_winner = open(f'images/winner.gif', 'rb')
-                            gif_loser = open(f'images/loser.gif', 'rb')
-                            mess_win = f"ВООТ ЭТО ДААА, *{message.from_user.first_name}* 🎉🎉🎉.\n\n\
-                            Вы выиграли игру со счетом *{scores}* {emoji[tier(scores)]}\n\n"
-
-                            def final_text(original_text):
-                                top_players = all_players(message.chat.id).items()
-                                sort_top_players = sorted(top_players, key=lambda x: int(x[1]), reverse=True)
-                                players_scores = []
-                                for player_name, player_score in sort_top_players:
-                                    players_scores.append(f"{player_name}: {player_score} {emoji[tier(score)]}")
-                                # отправляем gif анимацию и сообщение
-                                original_text += f"🤜 *РЕЗУЛЬТАТ ИГРЫ 👉{get_game(message.chat.id)[0]}👈*\n\n" + \
-                                                 "\n".join(players_scores)
-                                return original_text
-                            
-                            bot.send_animation(message.chat.id, gif_winner, caption=final_text(mess_win),
-                                               parse_mode="Markdown")
-                            mess_loser = f"КОНЕЦ ИГРЫ. *{message.from_user.first_name}* \
-                            победил со счетом *{scores}* {emoji[tier(scores)]}\n\n"
-
-                            list_chats = get_id_chats(get_game(message.chat.id)[0])
-                            list_chats.remove(str(message.chat.id))
-                            for chat_id in list_chats:
-                                text = final_text(mess_loser)
-                                bot.send_animation(chat_id, gif_loser, caption=text, parse_mode="Markdown")
-
-                            game_status_change(message.chat.id)
+                global cur_cheater
+                if is_delayed_message(date=message.date):
+                    mess = f"{message.from_user.first_name}, пожалуйста помедленнее, я записываю. Нажми, чтобы повторить.⬇️"
+                    gif = open('images/cheater.gif', 'rb')
+                    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+                    item1 = types.KeyboardButton(message.text.strip())
+                    markup.add(item1)
+                    bot.send_animation(message.chat.id, gif, caption=mess, parse_mode="Markdown", reply_markup=markup)
+                    cur_cheater = message.from_user.username
                 else:
-                    mess = "Ха-Ха! Повторно получить очки не получится! 😀"
-                    bot.send_message(message.chat.id, mess, parse_mode="Markdown")
+                    if temp_moments.get(message.from_user.username) != time_current_mesage:
+                        score = parse_time(message.text)
+                        if score:
+                            temp_moments[message.from_user.username] = time_current_mesage
+                            change_player_score(message.chat.id, message.from_user.username, score)
+                            scores = get_player_score(message.chat.id, message.from_user.username)
+                            gif = open(f'images/tier{tier(scores)}/{score}.gif', 'rb')
+                            mess = f"*{message.from_user.first_name}*, {congratulations[score-1]}\n\n" + \
+                                f"Держи {emoji[tier(scores)]*score}\n\nТвой счет: *{scores}* {emoji[tier(scores)]}"
+                            if cur_cheater == message.from_user.username:
+                                bot.send_animation(message.chat.id, gif, caption=mess, parse_mode="MarkdownV2", reply_markup=types.ReplyKeyboardRemove())
+                                cur_cheater = None
+                            else:
+                                bot.send_animation(message.chat.id, gif, caption=mess, parse_mode="MarkdownV2")
+                            if scores >= 125:
+                                gif_winner = open(f'images/winner.gif', 'rb')
+                                gif_loser = open(f'images/loser.gif', 'rb')
+                                mess_win = f"ВООТ ЭТО ДААА, *{message.from_user.first_name}* 🎉🎉🎉.\n\n" + \
+                                f"Вы выиграли игру со счетом *{scores}* {emoji[tier(scores)]}\n\n"
+
+                                def final_text(original_text):
+                                    top_players = all_players(message.chat.id).items()
+                                    sort_top_players = sorted(top_players, key=lambda x: int(x[1]), reverse=True)
+                                    players_scores = []
+                                    for player_name, player_score in sort_top_players:
+                                        players_scores.append(f"{player_name}: {player_score} {emoji[tier(score)]}")
+                                    # отправляем gif анимацию и сообщение
+                                    original_text += f"🤜 *РЕЗУЛЬТАТ ИГРЫ 👉{get_game(message.chat.id)[0]}👈*\n\n" + \
+                                                    "\n".join(players_scores)
+                                    return original_text
+                                
+                                bot.send_animation(message.chat.id, gif_winner, caption=final_text(mess_win),
+                                                parse_mode="Markdown")
+                                mess_loser = f"КОНЕЦ ИГРЫ. *{message.from_user.first_name}* " + \
+                                    f"победил со счетом *{scores}* {emoji[tier(scores)]}\n\n"
+
+                                list_chats = get_id_chats(get_game(message.chat.id)[0])
+                                list_chats.remove(str(message.chat.id))
+                                for chat_id in list_chats:
+                                    sleep(0.3)
+                                    text = final_text(mess_loser)
+                                    gif_loser.seek(0)
+                                    bot.send_animation(chat_id, gif_loser, caption=text, parse_mode="Markdown")
+                                    
+                                game_status_change(message.chat.id)
+                    else:
+                        mess = "Ха-Ха! Повторно получить очки не получится! 😀"
+                        bot.send_message(message.chat.id, mess, parse_mode="Markdown")
             else:
                 gif = open(f'images/tier{tier(scores)}/no.gif', "rb")
-                bot.send_animation(message.chat.id, gif, caption="Не вышло...")
+                bot.send_animation(message.chat.id, gif, caption="Не вышло...", reply_markup=types.ReplyKeyboardRemove())
 
         elif any([x in message.text.lower() for x in censures]):
             mess = f"Попрошу Вас не выражаться, {message.from_user.first_name}..."
@@ -212,4 +240,4 @@ def get_time_message(message):
 
 
 if __name__ == "__main__":
-    bot.polling(none_stop=True)
+    bot.infinity_polling(skip_pending=True, none_stop=True)
