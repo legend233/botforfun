@@ -6,7 +6,7 @@ from time import sleep
 import telebot
 from dotenv import load_dotenv, find_dotenv
 from telebot import types
-
+from telebot.apihelper import ApiTelegramException
 from constants import emoji, excluded_markdown, congratulations, censures
 from parsers import valid_time, parse_time, tier
 from sqltable import (
@@ -56,6 +56,42 @@ def final_text(original_text, message, score):
         + "\n".join(players_scores)
     )
     return original_text
+
+
+def check_win_and_end_game(scores, message, score):
+    if scores >= 125:
+        mess_win = f"ВООТ ЭТО ДААА, *{message.from_user.first_name}* 🎉🎉🎉.\n\n" + \
+                   f"Вы выиграли игру со счетом *{scores}* {emoji[tier(scores)]}\n\n"
+    with open("images/winner.gif", "rb") as gif_winner:
+        bot.send_animation(
+            message.chat.id,
+            gif_winner,
+            caption=final_text(mess_win, message, score),
+            parse_mode="Markdown",
+        )
+    mess_loser = (
+        f"КОНЕЦ ИГРЫ. *{message.from_user.first_name}* "
+        + f"победил со счетом *{scores}* {emoji[tier(scores)]}\n\n"
+    )
+
+    list_chats = get_id_chats(get_game(message.chat.id)[0])
+    list_chats.remove(str(message.chat.id))
+    with open("images/loser.gif", "rb") as gif_loser:
+        for chat_id in list_chats:
+            try:
+                sleep(0.3)
+                text = final_text(mess_loser, message, score)
+                gif_loser.seek(0)
+                bot.send_animation(
+                    chat_id,
+                    gif_loser,
+                    caption=text,
+                    parse_mode="Markdown",
+                )
+            except ApiTelegramException:
+                print(f"Не удалось отправить сообщение в чат {chat_id}")
+
+    game_status_change(message.chat.id)
 
 
 @bot.message_handler(commands=["time"])
@@ -230,37 +266,36 @@ def total_players_message(message):
     scores = []
     for player, score in sorted_total:
         scores.append(f"{player}: {score} {emoji[tier(score/10)]}")
-    mess = f"🤜 *ОБЩИЙ СЧЕТ*\n\n" + "\n".join(scores)
-    bot.send_animation(
-        message.chat.id,
-        open("images/total.gif", "rb"),
-        caption=mess,
-        parse_mode="MarkdownV2",
-    )
+    mess = "🤜 *ОБЩИЙ СЧЕТ*\n\n" + "\n".join(scores)
+    with open("images/total.gif", "rb") as gif:
+        bot.send_animation(
+            message.chat.id,
+            gif,
+            caption=mess,
+            parse_mode="MarkdownV2",
+        )
 
 
 @bot.message_handler(content_types=["text"])
-def get_time_message(message):
+def check_time_message(message):
     """Обработка сообщений от пользователя на предмет игры в 'время'"""
-    if game_status_check(message.chat.id):
-        time_current_message = datetime.datetime.fromtimestamp(message.date).strftime(
-            "%H:%M"
-        )
-        if valid_time(message.text):
-            scores = get_player_score(message.chat.id, message.from_user.username)
-            if time_current_message == message.text.strip() or DEV_MODE:
-                global cur_cheater
-                if is_delayed_message(date=message.date):
-                    mess = (
-                        message.from_user.first_name
-                        + ", пожалуйста помедленнее, я записываю. Нажми, чтобы повторить.⬇️"
-                    )
-                    gif = open("images/cheater.gif", "rb")
-                    markup = types.ReplyKeyboardMarkup(
-                        resize_keyboard=True, one_time_keyboard=True
-                    )
-                    item1 = types.KeyboardButton(message.text.strip())
-                    markup.add(item1)
+    if valid_time(message.text) and game_status_check(message.chat.id):
+        time_current_message = datetime.datetime.fromtimestamp(message.date).strftime("%H:%M")
+        scores = get_player_score(message.chat.id, message.from_user.username)
+        if time_current_message == message.text.strip() or DEV_MODE:
+            global cur_cheater
+            score = parse_time(message.text)
+            if is_delayed_message(date=message.date):
+                mess = (
+                    message.from_user.first_name
+                    + ", пожалуйста помедленнее, я записываю. Нажми, чтобы повторить.⬇️"
+                )
+                markup = types.ReplyKeyboardMarkup(
+                    resize_keyboard=True, one_time_keyboard=True
+                )
+                item1 = types.KeyboardButton(message.text.strip())
+                markup.add(item1)
+                with open("images/cheater.gif", "rb") as gif:
                     bot.send_animation(
                         message.chat.id,
                         gif,
@@ -268,77 +303,38 @@ def get_time_message(message):
                         parse_mode="Markdown",
                         reply_markup=markup,
                     )
-                    cur_cheater = message.from_user.username
-                else:
-                    if temp_moments.get(message.from_user.username) != message.date:
-                        score = parse_time(message.text)
-                        if score:
-                            temp_moments[message.from_user.username] = message.date
-                            change_player_score(
-                                message.chat.id, message.from_user.username, score
-                            )
-                            scores = get_player_score(
-                                message.chat.id, message.from_user.username
-                            )
-                            gif = open(f"images/tier{tier(scores)}/{score}.gif", "rb")
-                            mess = (
-                                f"*{message.from_user.first_name}*, {congratulations[score-1]}\n\n"
-                                + f"Держи {emoji[tier(scores)]*score}\n\nТвой счет: *{scores}* {emoji[tier(scores)]}"
-                            )
-                            if cur_cheater == message.from_user.username:
-                                bot.send_animation(
-                                    message.chat.id,
-                                    gif,
-                                    caption=mess,
-                                    parse_mode="MarkdownV2",
-                                    reply_markup=types.ReplyKeyboardRemove(),
-                                )
-                                cur_cheater = None
-                            else:
-                                bot.send_animation(
-                                    message.chat.id,
-                                    gif,
-                                    caption=mess,
-                                    parse_mode="MarkdownV2",
-                                )
-                            if scores >= 125:
-                                gif_winner = open(f"images/winner.gif", "rb")
-                                gif_loser = open(f"images/loser.gif", "rb")
-                                mess_win = (
-                                    f"ВООТ ЭТО ДААА, *{message.from_user.first_name}* 🎉🎉🎉.\n\n"
-                                    + f"Вы выиграли игру со счетом *{scores}* {emoji[tier(scores)]}\n\n"
-                                )
+                cur_cheater = message.from_user.username
+            elif temp_moments.get(message.from_user.username) != message.date and score:
+                temp_moments[message.from_user.username] = message.date
+                change_player_score(
+                    message.chat.id, message.from_user.username, score
+                )
+                scores = get_player_score(
+                    message.chat.id, message.from_user.username
+                )
+                gif = open(f"images/tier{tier(scores)}/{score}.gif", "rb")
+                mess = (
+                    f"*{message.from_user.first_name}*, {congratulations[score-1]}\n\n"
+                    + f"Держи {emoji[tier(scores)]*score}\n\nТвой счет: *{scores}* {emoji[tier(scores)]}"
+                )
+                reply_markup = None
+                if cur_cheater == message.from_user.username:
+                    reply_markup = types.ReplyKeyboardRemove()
+                    cur_cheater = None
 
-                                bot.send_animation(
-                                    message.chat.id,
-                                    gif_winner,
-                                    caption=final_text(mess_win, message, score),
-                                    parse_mode="Markdown",
-                                )
-                                mess_loser = (
-                                    f"КОНЕЦ ИГРЫ. *{message.from_user.first_name}* "
-                                    + f"победил со счетом *{scores}* {emoji[tier(scores)]}\n\n"
-                                )
-
-                                list_chats = get_id_chats(get_game(message.chat.id)[0])
-                                list_chats.remove(str(message.chat.id))
-                                for chat_id in list_chats:
-                                    sleep(0.3)
-                                    text = final_text(mess_loser, message, score)
-                                    gif_loser.seek(0)
-                                    bot.send_animation(
-                                        chat_id,
-                                        gif_loser,
-                                        caption=text,
-                                        parse_mode="Markdown",
-                                    )
-
-                                game_status_change(message.chat.id)
-                    else:
-                        mess = "Ха-Ха! Повторно получить очки не получится! 😀"
-                        bot.send_message(message.chat.id, mess, parse_mode="Markdown")
+                bot.send_animation(
+                    message.chat.id,
+                    gif,
+                    caption=mess,
+                    parse_mode="MarkdownV2",
+                    reply_markup=reply_markup,
+                )
+                check_win_and_end_game(scores, message, score)
             else:
-                gif = open(f"images/tier{tier(scores)}/no.gif", "rb")
+                mess = "Ха-Ха! Повторно получить очки не получится! 😀"
+                bot.send_message(message.chat.id, mess, parse_mode="Markdown")
+        else:
+            with open(f"images/tier{tier(scores)}/no.gif", "rb") as gif:
                 bot.send_animation(
                     message.chat.id,
                     gif,
@@ -346,9 +342,12 @@ def get_time_message(message):
                     reply_markup=types.ReplyKeyboardRemove(),
                 )
 
-        elif any([x in message.text.lower() for x in censures]):
-            mess = f"Попрошу Вас не выражаться, {message.from_user.first_name}..."
-            gif = open("images/consored.gif", "rb")
+
+@bot.message_handler(content_types=["text"])
+def censored_message(message):
+    if any([x in message.text.lower() for x in censures]):
+        mess = f"Попрошу Вас не выражаться, {message.from_user.first_name}..."
+        with open("images/consored.gif", "rb") as gif:
             bot.send_animation(
                 message.chat.id,
                 gif,
