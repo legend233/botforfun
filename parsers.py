@@ -29,6 +29,7 @@ def parse_time(sample_text: str) -> int:
         result = 0
     return result
 
+
 def tier(score):
     if score < 25:
         return 0
