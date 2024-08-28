@@ -1,4 +1,3 @@
-# noinspection PyPackageRequirements
 import datetime
 import os
 from time import sleep
@@ -26,7 +25,7 @@ from sqltable import (
 )
 
 load_dotenv(find_dotenv())
-bot = telebot.TeleBot(os.getenv("TELEGRAM_TOKEN"))
+bot = telebot.TeleBot(os.getenv("TELEGRAMM_TOKEN"))
 DEV_MODE = os.getenv("DEV_MODE", default=False)
 temp_moments = dict()
 cur_cheater = None
