@@ -7,6 +7,7 @@ import telebot
 from dotenv import load_dotenv, find_dotenv
 from telebot import types
 from telebot.apihelper import ApiTelegramException
+
 from constants import emoji, excluded_markdown, congratulations, censures
 from parsers import valid_time, parse_time, tier
 from sqltable import (
@@ -25,8 +26,8 @@ from sqltable import (
 )
 
 load_dotenv(find_dotenv())
-bot = telebot.TeleBot(os.getenv("TELEGRAMM_TOKEN"))
-DEV_MODE = True if os.getenv("DEV_MODE") == "True" else False  # ToDo: need dev_mode
+bot = telebot.TeleBot(os.getenv("TELEGRAM_TOKEN"))
+DEV_MODE = os.getenv("DEV_MODE", default=False)
 temp_moments = dict()
 cur_cheater = None
 
@@ -58,7 +59,7 @@ def final_text(original_text, message, score):
     return original_text
 
 
-def check_win_and_end_game(scores, message, score):
+def check_win_and_end_game(scores, message, score) -> None:
     if scores >= 125:
         mess_win = f"ВООТ ЭТО ДААА, <b>{message.from_user.first_name}</b> 🎉🎉🎉.\n\n" + \
                    f"Вы выиграли игру со счетом <b>{scores}</b> {emoji[tier(scores)]}\n\n"
@@ -91,7 +92,7 @@ def check_win_and_end_game(scores, message, score):
             except ApiTelegramException:
                 print(f"Не удалось отправить сообщение в чат {chat_id}")
 
-    game_status_change(message.chat.id)
+        game_status_change(message.chat.id)
 
 
 @bot.message_handler(commands=["time"])
@@ -117,7 +118,7 @@ def start_message(message):
 12:34 - 4 очка - (флеш рояль)
 
 Игра продолжается до 125 очков. Кто первый достигнет финиша, выйгрывает игру, после чего она заканчивается.
-Все очки игроков ведуться в рамках одной игры и параллельно ведеться общая статистика.
+Все очки игроков ведутся в рамках одной игры и параллельно ведется общая статистика.
 Есть градации уровней игры. Уровень сменяется, когда игрок набирает 25, 50, 75, 100, 125 очков.
 Список команд:
 /startgame "имя игры" - начать игру
@@ -281,7 +282,9 @@ def total_players_message(message):
 def check_time_message(message):
     """Обработка сообщений от пользователя на предмет игры в 'время'"""
     if valid_time(message.text) and game_status_check(message.chat.id):
-        time_current_message = datetime.datetime.fromtimestamp(message.date).strftime("%H:%M")
+        time_current_message = datetime.datetime.fromtimestamp(message.date).strftime(
+            "%H:%M"
+        )
         scores = get_player_score(message.chat.id, message.from_user.username)
         if time_current_message == message.text.strip() or DEV_MODE:
             global cur_cheater
@@ -307,12 +310,8 @@ def check_time_message(message):
                 cur_cheater = message.from_user.username
             elif temp_moments.get(message.from_user.username) != message.date and score:
                 temp_moments[message.from_user.username] = message.date
-                change_player_score(
-                    message.chat.id, message.from_user.username, score
-                )
-                scores = get_player_score(
-                    message.chat.id, message.from_user.username
-                )
+                change_player_score(message.chat.id, message.from_user.username, score)
+                scores = get_player_score(message.chat.id, message.from_user.username)
                 gif = open(f"images/tier{tier(scores)}/{score}.gif", "rb")
                 mess = (
                     f"<b>{message.from_user.first_name}</b>, {congratulations[score-1]}\n\n"
