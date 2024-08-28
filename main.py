@@ -268,7 +268,6 @@ def total_players_message(message):
     for player, score in sorted_total:
         scores.append(f"{player}: {score} {emoji[tier(score/10)]}")
     mess = "🤜 <b>ОБЩИЙ СЧЕТ</b>\n\n" + "\n".join(scores)
-    print(mess)
     with open("images/total.gif", "rb") as gif:
         bot.send_animation(
             message.chat.id,
