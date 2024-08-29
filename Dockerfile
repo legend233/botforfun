@@ -15,6 +15,7 @@ COPY ./main.py .
 COPY ./images ./images
 COPY ./parsers.py .
 COPY ./sqltable.py .
+COPY ./constants.py .
 COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 
