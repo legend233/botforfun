@@ -26,7 +26,6 @@ from sqltable import (
 
 load_dotenv(find_dotenv())
 bot = telebot.TeleBot(os.getenv("TELEGRAMM_TOKEN"))
-DEV_MODE = os.getenv("DEV_MODE", default=False)
 temp_moments = dict()
 cur_cheater = None
 
@@ -284,7 +283,7 @@ def check_time_message(message):
             "%H:%M"
         )
         scores = get_player_score(message.chat.id, message.from_user.username)
-        if time_current_message == message.text.strip() or DEV_MODE:
+        if time_current_message == message.text.strip():
             global cur_cheater
             score = parse_time(message.text)
             if is_delayed_message(date=message.date):
