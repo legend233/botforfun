@@ -278,6 +278,9 @@ def total_players_message(message):
 @bot.message_handler(content_types=["text"])
 def check_time_message(message):
     """Обработка сообщений от пользователя на предмет игры в 'время'"""
+    date_current_message = datetime.datetime.fromtimestamp(message.date).strftime(
+            "%d:%H:%M"
+        )
     if valid_time(message.text) and game_status_check(message.chat.id):
         time_current_message = datetime.datetime.fromtimestamp(message.date).strftime(
             "%H:%M"
@@ -305,8 +308,8 @@ def check_time_message(message):
                         reply_markup=markup,
                     )
                 cur_cheater = message.from_user.username
-            elif temp_moments.get(message.from_user.username) != message.date and score:
-                temp_moments[message.from_user.username] = message.date
+            elif temp_moments.get(message.from_user.username) != date_current_message and score:
+                temp_moments[message.from_user.username] = date_current_message
                 change_player_score(message.chat.id, message.from_user.username, score)
                 scores = get_player_score(message.chat.id, message.from_user.username)
                 gif = open(f"images/tier{tier(scores)}/{score}.gif", "rb")
@@ -338,11 +341,7 @@ def check_time_message(message):
                     caption="Не вышло...",
                     reply_markup=types.ReplyKeyboardRemove(),
                 )
-
-
-@bot.message_handler(content_types=["text"])
-def censored_message(message):
-    if any([x in message.text.lower() for x in censures]):
+    elif any([(x in message.text.lower()) for x in censures]):
         mess = f"Попрошу Вас не выражаться, {message.from_user.first_name}..."
         with open("images/consored.gif", "rb") as gif:
             bot.send_animation(
