@@ -330,7 +330,7 @@ def check_time_message(message):
                     reply_markup=reply_markup,
                 )
                 check_win_and_end_game(scores, message, score)
-            else:
+            elif temp_moments.get(message.from_user.username) == date_current_message:
                 mess = "Ха-Ха! Повторно получить очки не получится! 😀"
                 bot.send_message(message.chat.id, mess, parse_mode="HTML")
         else:
