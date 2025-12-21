@@ -23,11 +23,13 @@ from sqltable import (
     total_players,
     all_games_online,
 )
+from rick_and_morty_api import RickAndMortyAPI
 
 load_dotenv(find_dotenv())
 bot = telebot.TeleBot(os.getenv("TELEGRAMM_TOKEN"))
 temp_moments = dict()
 cur_cheater = None
+api_rick = RickAndMortyAPI()
 
 
 def is_delayed_message(date):
@@ -101,6 +103,18 @@ def cur_time(message):
     bot.send_message(
         message.chat.id, "Сейчас время: " + time_current_message, parse_mode="HTML"
     )
+
+
+@bot.message_handler(content_types=["text"])
+def who_am_i(message):
+    if "кто я" in message.text.lower():
+        mess, image = api_rick.get_rundom_character()
+        bot.send_photo(
+                message.chat.id,
+                image,
+                caption=mess,
+                reply_to_message_id=message.message_id,
+            )
 
 
 @bot.message_handler(commands=["start"])
@@ -330,7 +344,7 @@ def check_time_message(message):
                     reply_markup=reply_markup,
                 )
                 check_win_and_end_game(scores, message, score)
-            else:
+            elif temp_moments.get(message.from_user.username) == date_current_message:
                 mess = "Ха-Ха! Повторно получить очки не получится! 😀"
                 bot.send_message(message.chat.id, mess, parse_mode="HTML")
         else:

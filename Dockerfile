@@ -4,7 +4,6 @@ RUN apk update && apk upgrade && apk add git && apk add bash
 RUN pip install --upgrade pip
 RUN ["mkdir", "/app"]
 RUN ["mkdir", "/app/db"]
-ENV TELEGRAMM_TOKEN="telegramm_token"
 ENV DB_PATH="db/sql.db"
 ENV DEV_MODE=False
 RUN apk add --no-cache tzdata
@@ -17,6 +16,7 @@ COPY ./parsers.py .
 COPY ./sqltable.py .
 COPY ./constants.py .
 COPY ./requirements.txt .
+COPY ./rick_and_morty_api.py .
 RUN pip install -r requirements.txt
 
 CMD ["python3", "./main.py"]
